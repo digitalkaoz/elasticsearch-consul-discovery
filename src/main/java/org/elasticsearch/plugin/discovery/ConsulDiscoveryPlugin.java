@@ -60,31 +60,31 @@ import java.util.Collections;
 
 public class ConsulDiscoveryPlugin extends Plugin {
 
-	private final Settings settings;
-	protected final ESLogger logger = Loggers.getLogger(ConsulDiscoveryPlugin.class);
+    protected final ESLogger logger = Loggers.getLogger(ConsulDiscoveryPlugin.class);
+    private final Settings settings;
 
-	public ConsulDiscoveryPlugin(Settings settings) {
-		this.settings = settings;
-		logger.trace("starting consul discovery plugin...");
-	}
+    public ConsulDiscoveryPlugin(Settings settings) {
+        this.settings = settings;
+        logger.trace("starting consul discovery plugin...");
+    }
 
-	@Override
-	public String name() {
-		return "discovery-consul";
-	}
+    @Override
+    public String name() {
+        return "discovery-consul";
+    }
 
-	@Override
-	public String description() {
-		return "Consul Discovery Plugin";
-	}
+    @Override
+    public String description() {
+        return "Consul Discovery Plugin";
+    }
 
-	@Override
-	public Collection<Module> nodeModules() {
-		return Collections.singletonList((Module) new ConsulDiscoveryModule(settings));
-	}
+    @Override
+    public Collection<Module> nodeModules() {
+        return Collections.singletonList((Module) new ConsulDiscoveryModule(settings));
+    }
 
-	public void onModule(DiscoveryModule discoveryModule) {
-		discoveryModule.addDiscoveryType("consul", ConsulDiscovery.class);
-		discoveryModule.addUnicastHostProvider(ConsulUnicastHostsProvider.class);
-	}
+    public void onModule(DiscoveryModule discoveryModule) {
+        discoveryModule.addDiscoveryType("consul", ConsulDiscovery.class);
+        discoveryModule.addUnicastHostProvider(ConsulUnicastHostsProvider.class);
+    }
 }

@@ -16,20 +16,19 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.ElasticsearchException;
 
 public class ConsulDiscoveryModule extends AbstractModule {
-	protected final ESLogger logger;
-	private Settings settings;
+    protected final ESLogger logger;
+    private Settings settings;
 
-	@Inject
-	public ConsulDiscoveryModule(Settings settings) {
-		this.settings = settings;
-		this.logger = Loggers.getLogger(getClass(), settings);
-	}
+    @Inject
+    public ConsulDiscoveryModule(Settings settings) {
+        this.settings = settings;
+        this.logger = Loggers.getLogger(getClass(), settings);
+    }
 
-	@Override
-	protected void configure() {
-		logger.debug("starting consul services");
-	}
+    @Override
+    protected void configure() {
+        logger.debug("starting consul services");
+    }
 }

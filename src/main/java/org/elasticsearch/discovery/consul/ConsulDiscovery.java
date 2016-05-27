@@ -27,15 +27,15 @@ import org.elasticsearch.transport.TransportService;
 
 public class ConsulDiscovery extends ZenDiscovery {
 
-	public static final String CONSUL = "consul";
+    public static final String CONSUL = "consul";
 
-	@Inject
+    @Inject
 
-	public ConsulDiscovery(Settings settings, ClusterName clusterName, ThreadPool threadPool,
-	                       TransportService transportService, final ClusterService clusterService,
-	                       NodeSettingsService nodeSettingsService, ZenPingService pingService,
-	                       ElectMasterService electMasterService, DiscoverySettings discoverySettings) {
-		super(settings, clusterName, threadPool, transportService, clusterService, nodeSettingsService,
-		      pingService, electMasterService, discoverySettings);
-	}
+    public ConsulDiscovery(Settings settings, ClusterName clusterName, ThreadPool threadPool,
+                           TransportService transportService, final ClusterService clusterService,
+                           NodeSettingsService nodeSettingsService, ZenPingService pingService,
+                           ElectMasterService electMasterService, DiscoverySettings discoverySettings) {
+        super(settings, clusterName, threadPool, transportService, clusterService, nodeSettingsService,
+                pingService, electMasterService, discoverySettings);
+    }
 }
