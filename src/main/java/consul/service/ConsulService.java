@@ -53,7 +53,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Optional;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Uses consul's REST API and exposes certain functionality
@@ -62,67 +63,75 @@ import java.util.Optional;
  */
 
 public final class ConsulService {
-	private static final String CONSUL_HEALTH_CHECK_API_ENDPOINT_TEMPLATE =
-			"http://localhost:%d/v1/health/service/%s?%s";
+    private static final String CONSUL_HEALTH_CHECK_API_ENDPOINT_TEMPLATE =
+            "http://%s:%d/v1/health/service/%s?%s";
 
-	private final int consulAgentLocalWebServicePort;
-	private final String tag;
+    private final int consulAgentPort;
+    private final String consulAgentDomain;
+    private final String tag;
 
-	/**
-	 * @param consulPort port where the consul agent on node exposes HTTP API, by default
-	 *                   it is 8500
-	 * @param tag        if not null it will filter query on the tags
-	 */
-	public ConsulService(final int consulPort, final String tag) {
-		this.consulAgentLocalWebServicePort = consulPort;
-		this.tag = tag;
-	}
+    /**
+     * @param consulPort port where the consul agent on node exposes HTTP API, by default
+     *                   it is 8500
+     * @param tag        if not null it will filter query on the tags
+     */
+    public ConsulService(final int consulPort, final String consulDomain, final String tag) {
+        this.consulAgentPort = consulPort;
+        this.tag = tag;
+        this.consulAgentDomain = consulDomain;
+    }
 
-	/**
-	 * Communicates to consul over consul's REST API and retrieves list of healthy node's
-	 * IPs & port detail for the given service name
-	 * <p/>
-	 * It does it by making HTTP API call to
-	 * <p/>
-	 * http://localhost:${consulAgentLocalWebServicePort}/v1/health/service/${serviceName
-	 * }?${queryParams}
-	 * <p/>
-	 * queryParams is ?passing by default if tag holds not null value it would be
-	 * ?passing&tag=${tag}
-	 *
-	 * @param serviceNames
-	 * @return non null Set<DiscoveryResult> Containing IPs & port detail of healthy nodes
-	 * for given serviceName
-	 */
-	public Set<DiscoveryResult> discoverHealthyNodes(Set<String> serviceNames) throws
-			IOException {
-		Set<DiscoveryResult> result = new HashSet<>();
-		for (String serviceName : serviceNames) {
-			String consulServiceHealthEndPoint = getConsulHealthCheckApiUrl(serviceName);
-			final String apiResponse = Utility.readUrl(consulServiceHealthEndPoint);
-			HealthCheck[] healthChecks = new Gson().fromJson(apiResponse, HealthCheck[].class);
+    /**
+     * Communicates to consul over consul's REST API and retrieves list of healthy node's
+     * IPs & port detail for the given service name
+     * <p/>
+     * It does it by making HTTP API call to
+     * <p/>
+     * http://${consulAgentDomain}:${consulAgentPort}/v1/health/service/${serviceName
+     * }?${queryParams}
+     * <p/>
+     * queryParams is ?passing by default if tag holds not null value it would be
+     * ?passing&tag=${tag}
+     *
+     * @param serviceNames
+     * @return non null Set<DiscoveryResult> Containing IPs & port detail of healthy nodes
+     * for given serviceName
+     */
+    public Set<DiscoveryResult> discoverHealthyNodes(Set<String> serviceNames) throws
+            IOException {
+        Set<DiscoveryResult> result = new HashSet<>();
+        for (String serviceName : serviceNames) {
+            String consulServiceHealthEndPoint = getConsulHealthCheckApiUrl(serviceName);
+            final String apiResponse = Utility.readUrl(consulServiceHealthEndPoint);
+            HealthCheck[] healthChecks = (HealthCheck[]) AccessController.doPrivileged(
+                    new PrivilegedAction<HealthCheck[]>() {
+                        @Override
+                        public HealthCheck[] run() {
+                            return new Gson().fromJson(apiResponse, HealthCheck[].class);
+                        }
+                    }
+            );
+            Arrays.stream(healthChecks).forEach(healthCheck -> {
+                String ip = healthCheck.getService().getAddress();
+                int port = healthCheck.getService().getPort();
+                if (ip == null || ip.isEmpty()) {
+                    ip = healthCheck.getNode().getAddress();
+                }
+                result.add(new DiscoveryResult(ip, port));
+            });
+        }
+        return result;
+    }
 
-			Arrays.stream(healthChecks).forEach(healthCheck -> {
-                                String ip = healthCheck.getService().getAddress();
-                                int port = healthCheck.getService().getPort();
-                                if (ip == null || ip.isEmpty()) {
-                                    ip = healthCheck.getNode().getAddress();
-                                }
-                                result.add(new DiscoveryResult(ip, port));
-                            });
-		}
-		return result;
-	}
 
-
-	private final String getConsulHealthCheckApiUrl(final String serviceName) {
-		final StringBuffer queryParam = new StringBuffer("passing");
-		if (this.tag != null) {
-			queryParam.append("&tag=");
-			queryParam.append(tag.trim());
-		}
-		return String.format(CONSUL_HEALTH_CHECK_API_ENDPOINT_TEMPLATE,
-				consulAgentLocalWebServicePort, serviceName,
-				queryParam.toString());
-	}
+    private final String getConsulHealthCheckApiUrl(final String serviceName) {
+        final StringBuffer queryParam = new StringBuffer("passing");
+        if (this.tag != null) {
+            queryParam.append("&tag=");
+            queryParam.append(tag.trim());
+        }
+        return String.format(CONSUL_HEALTH_CHECK_API_ENDPOINT_TEMPLATE,
+                consulAgentDomain, consulAgentPort, serviceName,
+                queryParam.toString());
+    }
 }

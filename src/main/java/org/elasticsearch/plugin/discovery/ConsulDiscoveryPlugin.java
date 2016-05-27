@@ -65,7 +65,7 @@ public class ConsulDiscoveryPlugin extends Plugin {
 
 	public ConsulDiscoveryPlugin(Settings settings) {
 		this.settings = settings;
-		logger.trace("starting consul discovery plugin...");
+		logger.info("starting consul discovery plugin...");
 	}
 
 	@Override
